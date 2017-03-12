@@ -9,19 +9,15 @@
     <h1>Hello, {% if current_user.is_authenticated %}{{ current_user.username }}{% else %}Stranger{% endif %}!</h1>
 </div>
 <div>
-    <h3>label 1</h3>
     {% if current_user.can(Permission.WRITE_ARTICLES) %}
-    <h3>label 2</h3>
     {{ wtf.quick_form(form) }}
     {% else %}
-    <h3>lable 3</h3>
     {% endif %}
 </div>
 {% include '_posts.html' %}
 {% if pagination %}
 <div class="pagination">
     {{ macros.pagination_widget(pagination, '.index') }}
-    <!--<h3>hhhhhhhhhhhhhhhhhhhhhhh</h3>-->
 </div>
 {% endif %}
 {% endblock %}
