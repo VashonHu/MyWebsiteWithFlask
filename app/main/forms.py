@@ -51,3 +51,7 @@ class EditProfileAdminForm(FlaskForm):
                 and User.query.filter_by(username=field.data).first():
             raise ValidationError('Username already registered!')
 
+
+class CommentForm(FlaskForm):
+    body = StringField('', validators=[DataRequired])
+    submit = SubmitField('Submit')

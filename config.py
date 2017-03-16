@@ -2,11 +2,19 @@ import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+
 class Config():
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     FLASK_MAIL_SENDER = 'Flask <1251562003@qq.com>'
     FLASK_MAIL_ADMIN = '1251562003@qq.com'
+    FLASK_FOLLOWERS_PER_PAGE = 20
+    FLASK_COMMENTS_PER_PAGE = 20
+    FLASK_POSTS_PER_PAGE = 2
+
+    SQLALCHEMY_RECORD_QUERIES = True
+    FLASK_DB_QUERY_TIMEOUT = 0.5
+    FLASK_SLOW_DB_QUERY_TIME = 0.5
 
     @staticmethod
     def init_app(app):
@@ -33,6 +41,10 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data.sqlite')
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+
+    @classmethod
+    def init_app(cls, app):
+        Config.init_app(app)
 
 config = {
     'development': DevelopmentConfig,

@@ -14,7 +14,7 @@ db = SQLAlchemy()
 mail = Mail()
 log_manager = LoginManager()
 log_manager.session_protection = 'strong'
-log_manager.login_view = 'auth.aaqqlogin'
+log_manager.login_view = 'auth.login'
 pagedown = PageDown()
 
 
@@ -34,6 +34,8 @@ def create_app(config_name='default'):
     app.register_blueprint(main)
     from .auth import auth
     app.register_blueprint(auth, url_prefix='/auth')
+    from .api_0_1 import api as api_0_1
+    app.register_blueprint(api_0_1, url_prefix='/api/v1.0')
 
     return app
 
