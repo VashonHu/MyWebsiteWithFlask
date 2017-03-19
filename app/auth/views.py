@@ -1,3 +1,5 @@
+# This Python file uses the following encoding: utf-8
+
 from flask import render_template, url_for, redirect, request, flash, current_app
 from . import auth
 from ..models import User
@@ -15,7 +17,7 @@ def login():
         if user is not None and user.verify_password(form.password.data):
             login_user(user, form.remember_me.data)
             return redirect(request.args.get('next') or url_for('main.index'))
-        flash('Invalid username or password!')
+        flash(u'无效的用户名或密码！')
     return render_template('auth/login.html', form=form)
 
 
@@ -23,7 +25,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash('You have been logged out.')
+    flash(u'你现在已经登出。')
     return redirect(url_for('main.index'))
 
 
@@ -39,8 +41,8 @@ def register():
         token = user.genarate_confirmation_taken()
         if current_app.config['FLASK_MAIL_ADMIN']:
             send_mail(current_app.config['FLASK_MAIL_ADMIN'],
-                      'Confirm Your Account', 'auth/email/confirm', user=user, token=token)
-        flash('A confirmation email has been sent to you by email.')
+                      u'确认您的账户', 'auth/email/confirm', user=user, token=token)
+        flash(u'A confirmation email has been sent to you by email.')
         return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
 
@@ -51,9 +53,9 @@ def confirm(token):
     if current_user.confirmed:
         return redirect(url_for('main.index'))
     if current_user.confirm(token):
-        flash('You have confirmed your account.Thanks!')
+        flash(u'您已经确认您的账户，谢谢！')
     else:
-        flash('The confirmation link is invalid or has expired.')
+        flash(u'这个链接错误或令牌已经失效！')
     return redirect(url_for('main.index'))
 
 

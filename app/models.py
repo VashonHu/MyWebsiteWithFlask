@@ -71,12 +71,18 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(64))#real name
     location = db.Column(db.String(64))
     about_me = db.Column(db.Text())
-    member_since = db.Column(db.DateTime(), default=datetime.utcnow())
-    last_seen = db.Column(db.DateTime, default=datetime.utcnow())
+    member_since = db.Column(db.DateTime(), default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
 
-    posts = db.relationship('Post', backref='author', lazy='dynamic')
+    questions = db.relationship('Question', backref='author', lazy='dynamic')
 
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+
+    comments = db.relationship('Comment', backref='author', lazy='dynamic')
+
+    answers = db.relationship('Answer', backref='author', lazy='dynamic')
+
+    votes = db.relationship('Vote', backref='author', lazy='dynamic')
 
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
@@ -88,8 +94,6 @@ class User(UserMixin, db.Model):
                                 backref=db.backref('followed', lazy='joined'),
                                 lazy='dynamic',
                                 cascade='all, delete-orphan')
-
-    comments = db.relationship('Comment', backref='author', lazy='dynamic')
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -164,18 +168,18 @@ class User(UserMixin, db.Model):
 
     def to_json(self):
         json_user = {
-            'url': url_for('api.get_post', id=self.id, _external=True),
+            'url': url_for('api.get_question', id=self.id, _external=True),
             'username': self.username,
             'menber_since': self.menber_since,
             'last_seen': self.last_seen,
-            'posts': url_for('api.get_user_posts', id=self.id, _external=True),
-            'followed_posts': url_for('api.get_user_followed_posts',
+            'questions': url_for('api.get_user_questions', id=self.id, _external=True),
+            'followed_questions': url_for('api.get_user_followed_questions',
                                       id=self.id, _external=True),
-            'post_count': self.posts.count()}
+            'question_count': self.questions.count()}
         return json_user
 
     @staticmethod
-    def generate_fake(count=1000):
+    def generate_fake(count=200):
         from sqlalchemy.exc import IntegrityError
         from random import seed
         import forgery_py
@@ -197,8 +201,8 @@ class User(UserMixin, db.Model):
                 db.session.rollback()
 
     @property
-    def followed_posts(self):
-        return Post.query.join(Follow, Follow.followed_id == Post.author_id)\
+    def followed_questions(self):
+        return Question.query.join(Follow, Follow.followed_id == Question.author_id)\
             .filter(Follow.follower_id == self.id)
 
     @staticmethod
@@ -224,33 +228,33 @@ class User(UserMixin, db.Model):
         return User.query.get(data['id'])
 
 
-class Post(db.Model):
-    __tablename__ = 'posts'
+class Question(db.Model):
+    __tablename__ = 'questions'
     id = db.Column(db.Integer(), primary_key=True)
     body = db.Column(db.Text)
+    title = db.Column(db.String(128))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow())
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     body_html = db.Column(db.Text)
-
-    comments = db.relationship('Comment', backref='post', lazy='dynamic')
+    answers = db.relationship('Answer', backref='question', lazy='dynamic')
 
     def to_json(self):
-        json_post = {
-            'url': url_for('api.get_post', id=self.id, _external=True),
+        json_question = {
+            'url': url_for('api.get_question', id=self.id, _external=True),
             'body': self.body,
             'body_html': self.body_html,
             'timestamp': self.timestamp,
             'author': url_for('api.get_user', id=self.author_id, _external=True),
-            'comments': url_for('api.get_post_comments', id=self.id, _external=True),
+            'comments': url_for('api.get_question_comments', id=self.id, _external=True),
             'comment_count': self.comments.count()}
-        return json_post
+        return json_question
 
     @staticmethod
-    def from_json(json_post):
-        body = json_post.get('body')
+    def from_json(json_question):
+        body = json_question.get('body')
         if body is None or body == '':
-            raise ValidationError('post does not have a body')
-        return Post(body=body)
+            raise ValidationError('question does not have a body')
+        return Question(body=body)
 
     @staticmethod
     def generate_fake(count=1000):
@@ -261,11 +265,12 @@ class Post(db.Model):
         user_count = User.query.count()
         for i in range(count):
             u = User.query.offset(randint(0, user_count - 1)).first()
-            p = Post(body=forgery_py.lorem_ipsum.sentence(),
-                     timestamp=forgery_py.date.date(True),
-                     author=u)
-            db.session.add(p)
-            db.session.commit()
+            q = Question(title=forgery_py.lorem_ipsum.sentence(),
+                         body=forgery_py.lorem_ipsum.sentence(),
+                         timestamp=forgery_py.date.date(True),
+                         author=u)
+            db.session.add(q)
+        db.session.commit()
 
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
@@ -276,7 +281,87 @@ class Post(db.Model):
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
 
-db.event.listen(Post.body, 'set', Post.on_changed_body)
+db.event.listen(Question.body, 'set', Question.on_changed_body)
+
+
+class Answer(db.Model):
+    __tablename__ = 'answers'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    votes = db.relationship('Vote', backref='answer', lazy='dynamic')
+    comments = db.relationship('Comment', backref='answer', lazy='dynamic')
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initiator):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'code', 'em'
+                                                             'i', 'strong']
+        target.body_html = bleach.linkify(bleach.clean(
+            markdown(value, output_format='html'),
+            tags=allowed_tags, strip=True))
+
+    @staticmethod
+    def generate_fake():
+        from random import seed, randint
+        import forgery_py
+
+        seed()
+        user_count = User.query.count()
+        ques_count = Question.query.count()
+        for q in range(ques_count):
+            for j in range(randint(1, 10)):
+                u = User.query.offset(randint(0, user_count - 1)).first()
+                ques = Question.query.get(q)
+                a = Answer(body=forgery_py.lorem_ipsum.sentence(),
+                           timestamp=forgery_py.date.date(True),
+                           author=u,
+                           question=ques)
+                db.session.add(a)
+        db.session.commit()
+
+    def to_json(self):
+        json_question = {
+            'url': url_for('api.get_answer', id=self.id, _external=True),
+            'body': self.body,
+            'body_html': self.body_html,
+            'timestamp': self.timestamp,
+            'author': url_for('api.get_user', id=self.author_id, _external=True),
+            'question': url_for('api.get_question', id=self.question_id, _external=True),
+            'comments': url_for('api.get_answer_comments', id=self.id, _external=True),
+            'comment_count': self.comments.count()}
+        return json_question
+
+
+db.event.listen(Answer.body, 'set', Answer.on_changed_body)
+
+
+class Vote(db.Model):
+    __tablename__ = 'votes'
+    id = db.Column(db.Integer, primary_key=True)
+    answer_id = db.Column(db.Integer, db.ForeignKey('answers.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @staticmethod
+    def generate_fake():
+        from random import seed, randint
+        import forgery_py
+
+        seed()
+        user_count = User.query.count()
+        answer_count = Question.query.count()
+        for a in range(answer_count):
+            for j in range(randint(1, 10)):
+                u = User.query.offset(randint(0, user_count - 1)).first()
+                answer = Answer.query.get(a)
+                v = Vote(timestamp=forgery_py.date.date(True),
+                         author=u,
+                         answer=answer)
+                db.session.add(v)
+        db.session.commit()
 
 
 class Comment(db.Model):
@@ -287,26 +372,23 @@ class Comment(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow())
     disabled = db.Column(db.Boolean)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+    answer_id = db.Column(db.Integer, db.ForeignKey('answers.id'))
 
     @staticmethod
-    def generate_fake(count=100):
+    def generate_fake():
         from random import seed, randint
         import forgery_py
 
         seed()
         user_count = User.query.count()
-        for i in range(count):
-            u = User.query.offset(randint(0, user_count - 1)).first()
-            # post_count = u.posts.query.count()
-            post_count = Post.query.filter_by(author=u).count()
-            if post_count == 0:
-                continue
-            for j in range(count):
-                p = Post.query.offset(randint(0, post_count - 1)).first()
+        answer_count = Question.query.count()
+        for i in range(answer_count):
+            for j in range(randint(1, 10)):
+                u = User.query.offset(randint(0, user_count - 1)).first()
+                answer = Answer.query.get(i)
                 c = Comment(body=forgery_py.lorem_ipsum.sentence(),
                             timestamp=forgery_py.date.date(True),
-                            author=u, post=p)
+                            author=u, answer=answer)
                 db.session.add(c)
         db.session.commit()
 
@@ -318,6 +400,15 @@ class Comment(db.Model):
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
 
+    def to_json(self):
+        json_question = {
+            'url': url_for('api.get_comment', id=self.id, _external=True),
+            'body': self.body,
+            'body_html': self.body_html,
+            'timestamp': self.timestamp,
+            'author': url_for('api.get_user', id=self.author_id, _external=True),
+            'answer': url_for('api.get_answer', id=self.question_id, _external=True),}
+        return json_question
 
 db.event.listen(Comment.body, 'set', Comment.on_changed_body)
 

@@ -1,3 +1,5 @@
+# This Python file uses the following encoding: utf-8
+
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp

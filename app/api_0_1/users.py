@@ -1,5 +1,5 @@
 from . import api
-from ..models import Post, Permission
+from ..models import Question, Permission
 from flask import request, jsonify, url_for, current_app
 from .. import db
 from .authentication import auth

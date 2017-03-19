@@ -1,8 +1,10 @@
+# This Python file uses the following encoding: utf-8
+
 from flask import render_template,redirect, url_for, abort, flash, request, current_app, make_response
 from . import main
-from .forms import EditProfileForm, EditProfileAdminForm, PostForm, CommentForm
+from .forms import EditProfileForm, EditProfileAdminForm, QuestionForm, CommentForm, AnswerForm
 from .. import db
-from ..models import User, Role, Permission, Post, Comment
+from ..models import User, Role, Permission, Question, Comment, Answer, Vote
 from flask_login import login_required, current_user
 from ..decorators import admin_required, permission_required
 from flask_sqlalchemy import  get_debug_queries
@@ -10,25 +12,25 @@ from flask_sqlalchemy import  get_debug_queries
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    form = PostForm()
+    form = QuestionForm()
     if current_user.can(Permission.WRITE_ARTICLES) and \
             form.validate_on_submit():
-        post = Post(body=form.body.data, author=current_user._get_current_object())
-        db.session.add(post)
+        question = Question(body=form.body.data, author=current_user._get_current_object())
+        db.session.add(question)
         db.session.commit()
         return redirect(url_for('.index'))
     show_followed = False
     if current_user.is_authenticated:
         show_followed = bool(request.cookies.get('show_followed', ' '))
     if show_followed:
-        query = current_user.followed_posts
+        query = current_user.followed_questions
     else:
-        query = Post.query
+        query = Question.query
     page = request.args.get('page', 1, type=int)
-    pagination = query.order_by(Post.timestamp.desc()).paginate(
+    pagination = query.order_by(Question.timestamp.desc()).paginate(
         page, per_page=20, error_out=False)
-    posts = pagination.items
-    return render_template('index.html', form=form, posts=posts,
+    questions = pagination.items
+    return render_template('index.html', form=form, questions=questions,
                            pagination=pagination, show_followed=show_followed)
 
 
@@ -37,8 +39,10 @@ def user(username):
     user = User.query.filter_by(username=username).first()
     if user is None:
         abort(404)
-    posts = user.posts.order_by(Post.timestamp.desc()).all()
-    return render_template('user.html', user=user, posts=posts)
+    questions = user.questions.order_by(Question.timestamp.desc()).all()
+    answers = user.answers.order_by(Answer.timestamp.desc()).all()
+    admin = User.query.filter_by(email=current_app.config['FLASK_MAIL_ADMIN']).first()
+    return render_template('user.html', user=user, questions=questions, admin=admin, answers=answers)
 
 
 @main.route('/edit-profile', methods=['GET', 'POST'])
@@ -84,47 +88,67 @@ def edit_profile_admin(id):
     return render_template('edit_profile.html', form=form, user=user)
 
 
-@main.route('/post/<int:id>')
-def post(id):
-    post = Post.query.get_or_404(id)
-    form = CommentForm()
+@main.route('/question/<int:id>')
+def question(id):
+    question = Question.query.get_or_404(id)
+    form = AnswerForm()
     if form.validate_on_submit():
-        comment = CommentForm(
+        answer = Answer(
             body=form.body.data,
-            post=post,
+            question=question,
             author=current_user._get_current_object())
-        db.session.add(comment)
+        db.session.add(answer)
         db.session.commit()
-        flash('Your comment has been published.')
-        return redirect(url_for('.post', id=post.id, page=-1))#id
+        flash(u'您的回答已提交。')
+        return redirect(url_for('.question', id=question.id, page=-1))#id
     page = request.args.get('page', 1, type=int)
     if page == -1:
-        page = (post.comments.count() - 1) \
-               / current_app.config['FLASK_COMMENTS_PER_PAGE'] - 1
-    pagination = post.comments.order_by(Comment.timestamp.asc()).paginate(
-        page, per_page=current_app.config['FLASK_COMMENTS_PER_PAGE'],
+        page = (question.answers.count() - 1) \
+               / current_app.config['FLASK_ANSWERS_PER_PAGE'] - 1
+    pagination = question.answers.order_by(Answer.timestamp.asc()).paginate(
+        page, per_page=current_app.config['FLASK_ANSWERS_PER_PAGE'],
         error_out=False)
-    comments = pagination.items
-    return render_template('post.html', posts=[post], form=form,
-                           comments=comments, pagination=pagination)
+    answers = pagination.items
+    return render_template('question.html', questions=[question], form=form,
+                           answers=answers, pagination=pagination)
 
 
-@main.route('/edit/<int:id>', methods=['GET', 'POST'])
+@main.route('/edit_question/<int:id>', methods=['GET', 'POST'])
 @login_required
-def edit(id):
-    post = Post.query.get_or_404(id)
-    if current_user != post.author \
+def edit_question(id):
+    question = Question.query.get_or_404(id)
+    if current_user != question.author \
             and not current_user.can(Permission.ADMINISTER):
         abort(403)
-    form = PostForm()
+    form = QuestionForm()
     if form.validate_on_submit():
-        post.body = form.body.data
-        db.session.add(post)
+        question.title = form.title.data
+        question.body = form.body.data
+        db.session.add(question)
         db.session.commit()
-        flash('The post has been update.')
-        return redirect(url_for('post', id=post.id))
-    form.body.data = post.body
-    return render_template('edit_post.html', form=form)
+        flash(u'这个问题已经被更新。')
+        return redirect(url_for('question', id=question.id))
+    form.title.data = question.title
+    form.body.data = question.body
+    return render_template('edit_question.html', form=form)
+
+
+@main.route('/edit_answer/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_answer(id):
+    answer = Answer.query.get_or_404(id)
+    if current_user != answer.author \
+            and not current_user.can(Permission.ADMINISTER):
+        abort(403)
+    form = AnswerForm()
+    if form.validate_on_submit():
+        answer.body = form.body.data
+        db.session.add(answer)
+        db.session.commit()
+        flash(u'这个回答已经被更新。')
+        return redirect(url_for('.answer', id=answer.id))
+    form.body.data = answer.body
+    return render_template('edit_answer.html', form=form)
 
 
 @main.route('/follow/<username>')
@@ -192,21 +216,22 @@ def followed_by(username):
                            endpoint='.followed_by', pagination=pagination,
                            follows=follows)
 
-
-@main.route('/all')
-@login_required
-def show_all():
-    resp = make_response(redirect(url_for('.index')))
-    resp.set_cookie('show_followed', '', max_age=30*24*60*60)
-    return resp
-
-
-@main.route('/followed')
-@login_required
-def show_followed():
-    resp = make_response(redirect(url_for('.index')))
-    resp.set_cookie('show_followed', '1', max_age=30*24*60*60)
-    return resp
+#
+# @main.route('/all')
+# @login_required
+# def show_all():
+#     resp = make_response(redirect(url_for('.index')))
+#     resp.set_cookie('show_followed', '', max_age=30*24*60*60)
+#     return resp
+#
+#
+# @main.route('/followed')
+# @login_required
+# def show_followed():
+#     resp = make_response(redirect(url_for('.index')))
+#     resp.set_cookie('show_followed', '1', max_age=30*24*60*60)
+#     return resp
+#
 
 
 @main.route('/moderate')
@@ -252,3 +277,23 @@ def after_request(response):
                 'Slow query: %s\nParameters: %s\nDuration: %f\nContext: %s\n' % \
                 (query.statement, query.parameters, query.duration, query.context))
     return response
+
+
+@main.route('/square')
+def square():
+    pass
+
+
+@main.route('/post_question', methods=['GET', 'POST'])
+@login_required
+@permission_required(Permission.WRITE_ARTICLES)
+def post_question():
+    form = QuestionForm()
+    if form.validate_on_submit():
+        question = Question(title=form.title.data,
+                            body=form.body.data,
+                            author=current_user._get_current_object())
+        db.session.add(question)
+        db.session.commmit()
+        return redirect('.question', id=question.id)
+    return render_template('post_question.html', form=form)
