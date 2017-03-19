@@ -8,30 +8,30 @@ from ..models import User, Role, Permission, Question, Comment, Answer, Vote
 from flask_login import login_required, current_user
 from ..decorators import admin_required, permission_required
 from flask_sqlalchemy import  get_debug_queries
+import sys
+
+# if current_user.is_authenticated:
+    #     show_followed = bool(request.cookies.get('show_followed', ' '))
+    # if show_followed:
+    #     query = current_user.followed_questions
+    # else:
+    #     query = Question.query
 
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    form = QuestionForm()
-    if current_user.can(Permission.WRITE_ARTICLES) and \
-            form.validate_on_submit():
-        question = Question(body=form.body.data, author=current_user._get_current_object())
-        db.session.add(question)
-        db.session.commit()
-        return redirect(url_for('.index'))
-    show_followed = False
-    if current_user.is_authenticated:
-        show_followed = bool(request.cookies.get('show_followed', ' '))
-    if show_followed:
-        query = current_user.followed_questions
+    query_questions = None
+    if current_user.is_authenticated and current_user.followers.count() > 0:
+        query_questions = current_user.followed_questions
     else:
-        query = Question.query
+        query_questions = Question.query
     page = request.args.get('page', 1, type=int)
-    pagination = query.order_by(Question.timestamp.desc()).paginate(
+    pagination_questions = query_questions.order_by(Question.timestamp.desc()).paginate(
         page, per_page=20, error_out=False)
-    questions = pagination.items
-    return render_template('index.html', form=form, questions=questions,
-                           pagination=pagination, show_followed=show_followed)
+    questions = pagination_questions.items
+    return render_template('index.html', questions=questions,
+                           pagination_questions=pagination_questions,
+                           Answer=Answer, row=2)
 
 
 @main.route('/user/<username>')
@@ -42,7 +42,8 @@ def user(username):
     questions = user.questions.order_by(Question.timestamp.desc()).all()
     answers = user.answers.order_by(Answer.timestamp.desc()).all()
     admin = User.query.filter_by(email=current_app.config['FLASK_MAIL_ADMIN']).first()
-    return render_template('user.html', user=user, questions=questions, admin=admin, answers=answers)
+    return render_template('user.html', user=user, questions=questions,
+                           admin=admin, answers=answers, Answer=Answer, row=0)
 
 
 @main.route('/edit-profile', methods=['GET', 'POST'])
@@ -88,7 +89,7 @@ def edit_profile_admin(id):
     return render_template('edit_profile.html', form=form, user=user)
 
 
-@main.route('/question/<int:id>')
+@main.route('/question/<int:id>', methods=['GET', 'POST'])
 def question(id):
     question = Question.query.get_or_404(id)
     form = AnswerForm()
@@ -110,7 +111,7 @@ def question(id):
         error_out=False)
     answers = pagination.items
     return render_template('question.html', questions=[question], form=form,
-                           answers=answers, pagination=pagination)
+                           answers=answers, pagination=pagination, row=sys.maxint, Answer=Answer)
 
 
 @main.route('/edit_question/<int:id>', methods=['GET', 'POST'])
@@ -281,7 +282,14 @@ def after_request(response):
 
 @main.route('/square')
 def square():
-    pass
+    query_questions = Question.query
+    page = request.args.get('page', 1, type=int)
+    pagination_questions = query_questions.order_by(Question.timestamp.desc()).paginate(
+        page, per_page=20, error_out=False)
+    questions = pagination_questions.items
+    return render_template('square.html', questions=questions,
+                           pagination_questions=pagination_questions,
+                           Answer=Answer, row=2)
 
 
 @main.route('/post_question', methods=['GET', 'POST'])
@@ -294,6 +302,18 @@ def post_question():
                             body=form.body.data,
                             author=current_user._get_current_object())
         db.session.add(question)
-        db.session.commmit()
-        return redirect('.question', id=question.id)
+        db.session.commit()
+        return redirect(url_for('.question', id=question.id))
     return render_template('post_question.html', form=form)
+
+
+@main.route('/vote/<int:id>')
+@login_required
+def vote(id):
+    # answer = Answer.query.get_or_404(id)
+    vote = Vote(answer=id,
+                author=current_user._get_current_object())
+    db.session.add(vote)
+    db.session.commit()
+    return redirect(request.args.get('next') or  url_for('.index'))
+

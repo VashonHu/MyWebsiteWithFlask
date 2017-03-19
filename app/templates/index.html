@@ -9,9 +9,11 @@
     <h1>你好, {% if current_user.is_authenticated %}{{ current_user.username }}{% else %}游客{% endif %}</h1>
 </div>
 
-{% if pagination %}
-<div class="pagination">
-    {{ macros.pagination_widget(pagination, '.index') }}
+{% include '_questions.html' %}
+
+{% if pagination_questions %}
+<div class="pagination_questions">
+    {{ macros.pagination_widget(pagination_questions, '.index') }}
 </div>
 {% endif %}
 {% endblock %}

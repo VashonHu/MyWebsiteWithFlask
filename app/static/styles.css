@@ -28,6 +28,25 @@ div.question-thumbnail {
     position: absolute;
 }
 div.question-content {
-    margin-left: 48px;
     min-height: 48px;
+}
+
+div.answer-content{
+    margin-left: 10px;
+    min-height: 48px;
+}
+
+div.answer-date{
+    float: right;
+}
+div.answer-author{
+    font-weight: bold;
+}
+
+div.answer-footer_max{
+    margin-bottom: 10px;
+}
+
+div.answer-footer{
+    margin-bottom: 5px;
 }

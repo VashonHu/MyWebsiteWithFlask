@@ -5,8 +5,8 @@
 {% block title %}X乎 - 问题{% endblock %}
 
 {% block page_content %}
-{% include '_questions' %}
-<h4 id="answers">回答</h4>
+{% include '_questions.html' %}
+<!--<h4 id="answers">回答</h4>-->
 {% if current_user.can(Permission.WRITE_ARTICLES) %}
 <div class="answer-form">
     {{ wtf.quick_form(form) }}
@@ -15,7 +15,7 @@
 {% include '_answers.html' %}
 {% if pagination %}
 <div class="pagination">
-    {{ macros.pagination_widget(pagination, '.question', fragment='#answer', id=posts[0].id) }}
+    {{ macros.pagination_widget(pagination, '.question', fragment='#answer', id=questions[0].id) }}
 </div>
 {% endif %}
 {% endblock %}

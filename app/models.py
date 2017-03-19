@@ -345,6 +345,9 @@ class Vote(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def __repr__(self):
+        return '<Vote %r>' % self.author_id
+
     @staticmethod
     def generate_fake():
         from random import seed, randint

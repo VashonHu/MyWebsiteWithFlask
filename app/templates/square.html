@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}X乎 - 问题广场{% endblock %}
+
+{% block page_content %}
+<h3>全部问题如下：</h3>
+
+{% include '_questions.html' %}
+
+{% if pagination_questions %}
+<div class="pagination_questions">
+    {{ macros.pagination_widget(pagination_questions, '.square') }}
+</div>
+{% endif %}
+{% endblock %}

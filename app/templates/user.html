@@ -11,13 +11,13 @@
         <p>
             {% if user.name %}{{ user.name }}<br>{% endif %}
             {% if user.location %}
-                From <a href="http://maps.google.com/?q={{ user.location }}">{{ user.location }}</a><br>
+                来自 <a href="http://maps.google.com/?q={{ user.location }}">{{ user.location }}</a><br>
             {% endif %}
         </p>
         {% endif %}
 
         {% if admin %}
-        <li><a href="mailto:{{ admin.email }}">联系管理员</a></li>
+        <p><a href="mailto:{{ admin.email }}">联系管理员</a></p>
         {% endif %}
         {% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
         <p>注册自：{{ moment(user.member_since).format('LLL') }}起。 上一次登录：{{ moment(user.last_seen).fromNow() }}.</p>
