@@ -49,17 +49,17 @@
 </div>
 <h3>{{ user.username }}提出的问题</h3>
 {% include '_questions.html' %}
-{% if pagination_question %}
+{% if pagination_questions %}
 <div class="pagination_question">
-    {{ macros.pagination_widget(pagination, '.user', username=user.username) }}
+    {{ macros.pagination_widget(pagination_questions, '.user', username=user.username) }}
 </div>
 {% endif %}
 
 <h3>{{ user.username }}的回答</h3>
 {% include '_answers.html' %}
-{% if pagination_answer %}
+{% if pagination_answers %}
 <div class="pagination_answer">
-    {{ macros.pagination_widget(pagination, '.user', username=user.username) }}
+    {{ macros.pagination_widget(pagination_answers, '.user', username=user.username) }}
 </div>
 {% endif %}
 

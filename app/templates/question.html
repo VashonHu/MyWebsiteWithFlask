@@ -12,10 +12,4 @@
     {{ wtf.quick_form(form) }}
 </div>
 {% endif %}
-{% include '_answers.html' %}
-{% if pagination %}
-<div class="pagination">
-    {{ macros.pagination_widget(pagination, '.question', fragment='#answer', id=questions[0].id) }}
-</div>
-{% endif %}
 {% endblock %}

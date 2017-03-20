@@ -31,7 +31,7 @@ def index():
     questions = pagination_questions.items
     return render_template('index.html', questions=questions,
                            pagination_questions=pagination_questions,
-                           Answer=Answer, row=2)
+                           Answer=Answer, row=2, all=False)
 
 
 @main.route('/user/<username>')
@@ -39,11 +39,18 @@ def user(username):
     user = User.query.filter_by(username=username).first()
     if user is None:
         abort(404)
-    questions = user.questions.order_by(Question.timestamp.desc()).all()
-    answers = user.answers.order_by(Answer.timestamp.desc()).all()
+    page = request.args.get('page', 1, type=int)
+    pagination_questions = user.questions.order_by(Question.timestamp.desc()).paginate(
+        page, per_page=20, error_out=False)
+    pagination_answers = user.answers.order_by(Answer.timestamp.desc()).paginate(
+        page, per_page=20, error_out=False)
+    questions = pagination_questions.items
+    answers = pagination_answers.items
     admin = User.query.filter_by(email=current_app.config['FLASK_MAIL_ADMIN']).first()
     return render_template('user.html', user=user, questions=questions,
-                           admin=admin, answers=answers, Answer=Answer, row=0)
+                           admin=admin, answers=answers, Answer=Answer, row=0,
+                           pagination_answers=pagination_answers,
+                           pagination_questions=pagination_questions)
 
 
 @main.route('/edit-profile', methods=['GET', 'POST'])
@@ -111,7 +118,8 @@ def question(id):
         error_out=False)
     answers = pagination.items
     return render_template('question.html', questions=[question], form=form,
-                           answers=answers, pagination=pagination, row=sys.maxint, Answer=Answer)
+                           answers=answers, pagination=pagination, row=sys.maxint,
+                           Answer=Answer)
 
 
 @main.route('/edit_question/<int:id>', methods=['GET', 'POST'])
@@ -310,8 +318,12 @@ def post_question():
 @main.route('/vote/<int:id>')
 @login_required
 def vote(id):
-    # answer = Answer.query.get_or_404(id)
-    vote = Vote(answer=id,
+    answer = Answer.query.get_or_404(id)
+    if Vote.query.filter_by(answer=answer,
+                            author=current_user._get_current_object()).first():
+        flash(u'您已经点赞过这个问答了。')
+        return redirect(request.args.get('next') or url_for('.index'))
+    vote = Vote(answer=answer,
                 author=current_user._get_current_object())
     db.session.add(vote)
     db.session.commit()

@@ -82,8 +82,8 @@ def resend_confirmation():
     token = current_user.genarate_confirmation_taken()
     if current_app.config['FLASK_MAIL_ADMIN']:
         send_mail(current_app.config['FLASK_MAIL_ADMIN'],
-                  'Confirm Your Account', 'auth/email/confirm', user=current_user, token=token)
-    flash('A new confirmation email has been sent to you by email.')
+                  u'确认你的账户', 'auth/email/confirm', user=current_user, token=token)
+    flash(u'一封信的电子邮件已经发送到您的邮箱')
     return redirect(request.args.get('next') or url_for('main.index'))
 
 
@@ -96,10 +96,10 @@ def change_password():
             current_user.password = form.password
             db.session.add(current_user)
             db.session.commit()
-            flash('Your password has been changed!')
+            flash(u'您的密码已经被更新！')
             return redirect(request.args.get('next') or url_for('main.index'))
         else:
-            flash('Invalid password!')
+            flash(u'无效的密码')
     return render_template('auth/change_password.html', form=form)
 
 

@@ -281,6 +281,24 @@ class Question(db.Model):
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
 
+    def top_answers(self, limit_row=1):
+        sql = db.text('SELECT questions.id, answers.id, count(votes.id)' +
+                      'FROM questions, answers, votes ' +
+                      'WHERE questions.id = :val and questions.id \
+                      = answers.question_id and answers.id = votes.answer_id \
+                      GROUP BY questions.id, answers.id \
+                      ORDER BY count(votes.id) DESC \
+                      LIMIT :limit_rows')
+        result = db.engine.execute(sql, val=self.id, limit_rows=limit_row)
+        row1 = []
+        row2 = []
+        row3 = []
+        for row in result:
+            row1.append(row[0])
+            row2.append(row[1])
+            row3.append(row[2])
+        return row1, row2, row3
+
 db.event.listen(Question.body, 'set', Question.on_changed_body)
 
 
@@ -333,7 +351,6 @@ class Answer(db.Model):
             'comments': url_for('api.get_answer_comments', id=self.id, _external=True),
             'comment_count': self.comments.count()}
         return json_question
-
 
 db.event.listen(Answer.body, 'set', Answer.on_changed_body)
 
@@ -429,3 +446,6 @@ def load_user(user_id):
     return User.query.get(user_id)#key
 
 log_manager.anonymous_user = AnonymousUser
+
+
+

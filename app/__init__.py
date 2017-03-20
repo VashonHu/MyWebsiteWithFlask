@@ -6,6 +6,7 @@ from flask_mail import Mail
 from config import config
 from flask_login import LoginManager
 from flask_pagedown import PageDown
+from flask_sslify import SSLify
 
 
 bootstrap = Bootstrap()
@@ -29,6 +30,7 @@ def create_app(config_name='default'):
     mail.init_app(app)
     log_manager.init_app(app)
     pagedown.init_app(app)
+    sslify = SSLify(app)
 
     from .main import main
     app.register_blueprint(main)

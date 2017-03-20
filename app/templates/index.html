@@ -8,6 +8,9 @@
 <div class="page-header">
     <h1>你好, {% if current_user.is_authenticated %}{{ current_user.username }}{% else %}游客{% endif %}</h1>
 </div>
+<div>
+    <h3>你的时间线：</h3>
+</div>
 
 {% include '_questions.html' %}
 

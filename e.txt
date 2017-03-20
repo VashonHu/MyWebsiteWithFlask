@@ -1,0 +1,19 @@
+<!--{% set val = {'v':True} %}-->
+        <!--{% if not all %}-->
+            <!--{% set answers = question.top_answers(limit_row=row) %}-->
+            <!--{% if answers and answers[1] != [] %}-->
+                <!--{% set answer_list = [] %}-->
+                <!--{% for answer_id in answers[1] %}-->
+                    <!--answer_list.append(Answer.query.get(answer_id))-->
+                <!--{% endfor %}-->
+                <!--{% val.update({'v': answer_list}) %}-->
+            <!--{% else %}-->
+                <!--{% set answers_list = question.answers.order_by(Answer.timestamp.desc()).limit(row).all() %}-->
+                <!--{% val.update({'v': answer_list}) %}-->
+            <!--{% endif%}-->
+        <!--{% else %}-->
+            {% set answers_list = question.answers.order_by(Answer.timestamp.desc()).limit(row).all() %}
+            <!--{% val.update({'v': answer_list}) %}-->
+        <!--{% endif %}-->
+
+        <!--{% for answer in val['v'] %}-->

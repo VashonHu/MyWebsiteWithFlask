@@ -16,7 +16,7 @@ ul.questions li.question {
     border-bottom: 1px solid #e0e0e0;
 }
 ul.questions li.question:hover {
-    background-color: #f0f0f0;
+    background-color: #cdcdcd;
 }
 div.question-date {
     float: right;
@@ -32,7 +32,7 @@ div.question-content {
 }
 
 div.answer-content{
-    margin-left: 10px;
+    margin-left: 0px;
     min-height: 48px;
 }
 
