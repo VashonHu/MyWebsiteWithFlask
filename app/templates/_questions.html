@@ -36,9 +36,8 @@
             {% include '_answers.html' %}
         {% elif not all %}
             {% set answers_r = question.top_answers(row) %}
-            {% if answers_r and answers_r[1] != [] %}
-                {% for answer_id in answers_r[1] %}
-                    <h3> {{ answers_r[1] }} </h3>
+            {% if answers_r  %}
+                {% for answer_id in answers_r %}
                      {% set answer =  Answer.query.get(answer_id) %}
                         <ul class="answer">
                             <div class="answer-content">

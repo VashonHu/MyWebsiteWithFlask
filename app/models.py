@@ -282,22 +282,18 @@ class Question(db.Model):
             tags=allowed_tags, strip=True))
 
     def top_answers(self, limit_row=1):
-        sql = db.text('SELECT questions.id, answers.id, count(votes.id)' +
-                      'FROM questions, answers, votes ' +
-                      'WHERE questions.id = :val and questions.id \
-                      = answers.question_id and answers.id = votes.answer_id \
-                      GROUP BY questions.id, answers.id \
+        sql = db.text('SELECT answers.id \
+                      FROM answers LEFT OUTER JOIN votes \
+                      ON  answers.question_id and answers.id = votes.answer_id \
+                      WHERE answers.question_id = :val \
+                      GROUP BY answers.id \
                       ORDER BY count(votes.id) DESC \
                       LIMIT :limit_rows')
         result = db.engine.execute(sql, val=self.id, limit_rows=limit_row)
         row1 = []
-        row2 = []
-        row3 = []
         for row in result:
             row1.append(row[0])
-            row2.append(row[1])
-            row3.append(row[2])
-        return row1, row2, row3
+        return row1
 
 db.event.listen(Question.body, 'set', Question.on_changed_body)
 
