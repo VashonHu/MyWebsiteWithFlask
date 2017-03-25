@@ -3,7 +3,7 @@
 from flask import render_template, url_for, redirect, request, flash, current_app
 from . import auth
 from ..models import User
-from .forms import LoginForm, RegistrationForm, ChangePasswordForm
+from .forms import LoginForm, RegistrationForm, ChangePasswordForm, ChangeEmailForm
 from flask_login import login_user, login_required, logout_user, current_user
 from .. import db
 from ..email import send_mail
@@ -42,7 +42,7 @@ def register():
         if current_app.config['FLASK_MAIL_ADMIN']:
             send_mail(current_app.config['FLASK_MAIL_ADMIN'],
                       u'确认您的账户', 'auth/email/confirm', user=user, token=token)
-        flash(u'A confirmation email has been sent to you by email.')
+        flash(u'一封确认邮件已经发到您的电子邮箱，请注意查收')
         return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
 
@@ -92,7 +92,7 @@ def resend_confirmation():
 def change_password():
     form = ChangePasswordForm()
     if form.validate_on_submit():
-        if current_user.verify_password(form.old_password):
+        if current_user.verify_password(form.old_password.data):
             current_user.password = form.password
             db.session.add(current_user)
             db.session.commit()
@@ -109,5 +109,21 @@ def password_reset_request():
 
 
 @auth.route('/change_email_request', methods=['GET', 'POST'])
+@login_required
 def change_email_request():
-    pass
+    form = ChangeEmailForm()
+    if form.validate_on_submit():
+        if current_user.verify_password(form.password.data):
+            current_user.new_email = form.new_email.data
+            current_user.confirmed = False
+            db.session.add(current_user)
+            db.session.commit()
+            token = current_user.genarate_confirmation_taken()
+            if current_app.config['FLASK_MAIL_ADMIN']:
+                send_mail(current_app.config['FLASK_MAIL_ADMIN'],
+                          u'确认您的账户', 'auth/email/confirm', user=user, token=token)
+            flash(u'您的邮箱地址已经被更新！请确认您新的电子邮箱地址')
+            return redirect(url_for('.unconfirmed'))
+        else:
+            flash(u'无效的密码')
+    return render_template('auth/change_email.html', form=form)

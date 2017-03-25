@@ -45,3 +45,8 @@ class ChangePasswordForm(FlaskForm):
     password2 = PasswordField(u'确认密码', validators=[DataRequired])
     submit = SubmitField(u'修改密码')
 
+
+class ChangeEmailForm(FlaskForm):
+    password = PasswordField(u'密码', validators=[DataRequired()])
+    new_email = StringField(u'新邮件地址', validators=[DataRequired()])
+    submit = SubmitField(u'修改邮箱')
