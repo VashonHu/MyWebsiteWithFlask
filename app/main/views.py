@@ -111,8 +111,7 @@ def question(id):
         return redirect(url_for('.question', id=question.id, page=-1))#id
     page = request.args.get('page', 1, type=int)
     if page == -1:
-        page = (question.answers.count() - 1) \
-               / current_app.config['FLASK_ANSWERS_PER_PAGE'] - 1
+        page = (question.answers.count() - 1) / current_app.config['FLASK_ANSWERS_PER_PAGE'] - 1
     pagination = question.answers.paginate(
         page, per_page=current_app.config['FLASK_ANSWERS_PER_PAGE'],
         error_out=False)

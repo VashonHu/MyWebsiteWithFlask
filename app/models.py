@@ -232,7 +232,7 @@ class Question(db.Model):
     __tablename__ = 'questions'
     id = db.Column(db.Integer(), primary_key=True)
     body = db.Column(db.Text)
-    title = db.Column(db.String(128))
+    title = db.Column(db.String(300))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow())
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     body_html = db.Column(db.Text)
