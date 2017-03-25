@@ -30,7 +30,8 @@ class DevelopmentConfig(Config):
     MAIL_USE_SSL = True
     MAIL_USERNAME = '1251562003@qq.com'#os.getenv('MAIL_USERNAME')  #
     MAIL_PASSWORD = 'ahcefwavyfzajfec'#os.getenv('MAIL_PASSWORD')  #
-    SQLALCHEMY_DATABASE_URI = "mysql://root:hu123456@localhost:3306/mywebsite"#'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')#"mysql://root:hu123456@localhost:3306/mywebsite"
+    #SQLALCHEMY_DATABASE_URI = "mysql://root:hu123456@localhost:3306/mywebsite"#'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')#"mysql://root:hu123456@localhost:3306/mywebsite"
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')#"mysql://root:hu123456@localhost:3306/mywebsite"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
 
