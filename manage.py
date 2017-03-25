@@ -40,7 +40,7 @@ def deploy():
     # User.add_self_follows()
     Question.generate_fake()
     Answer.generate_fake()
-    Comment.generate_fake()
+    # Comment.generate_fake()
     Vote.generate_fake()
 
     # db.session.commit()

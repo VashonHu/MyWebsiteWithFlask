@@ -31,12 +31,43 @@
         </div>
     </li>
     <ul class="answers">
-        {% if not all %}
-            {% set answers_r = question.top_answers(limit_row=row) %}
+        {% if row <= 0 %}
+        {% elif answers %}
+            {% include '_answers.html' %}
+        {% elif not all %}
+            {% set answers_r = question.top_answers(row) %}
             {% if answers_r and answers_r[1] != [] %}
                 {% for answer_id in answers_r[1] %}
+                    <h3> {{ answers_r[1] }} </h3>
                      {% set answer =  Answer.query.get(answer_id) %}
-                        {% include '_answers_no_loop.html' %}
+                        <ul class="answer">
+                            <div class="answer-content">
+                            <div class="answer-date">{{ moment(answer.timestamp).fromNow() }}</div>
+                            <div class="answer-author"><a href="{{ url_for('.user', username=answer.author.username) }}">{{ answer.author.username }}回答：</a></div>
+                            <div class="answer-body">
+                                {% if answer.body_html %}
+                                    {{ answer.body_html | safe }}
+                                {% else %}
+                                    {{ answer.body }}
+                                {% endif %}
+                            </div>
+                            <div class="answer-footer">
+                                {% if current_user == answer.author %}
+                                    <a href="{{ url_for('.edit_answer', id=answer.id) }}">
+                                    <span class="label label-primary">编辑</span>
+                                    </a>
+                                {% elif current_user.is_administrator() %}
+                                    <a href="{{ url_for('.edit_answer', id=answer.id) }}">
+                                    <span class="label label-danger">编辑 [管理员]</span>
+                                    </a>
+                                {% endif %}
+                                <a href="{{ url_for('.vote', id=answer.id)}}#answer.id ">
+                                <span class="label label-primary">点赞({{ answer.votes.count() }})</span>
+                                </a>
+                            </div>
+                        </div>
+                    </ul>
+                    <div class="answer-footer_max"></div>
                 {% endfor %}
             {% else %}
                 {% set answers = question.answers.order_by(Answer.timestamp.desc()).limit(row).all() %}

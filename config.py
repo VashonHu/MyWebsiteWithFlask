@@ -6,7 +6,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config():
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
     SQLALCHEMY_TRACK_MODIFICATIONS = True
-    FLASK_MAIL_SENDER = 'Flask <1251562003@qq.com>'
+    FLASK_MAIL_SENDER = 'Xhu <1251562003@qq.com>'
     FLASK_MAIL_ADMIN = '1251562003@qq.com'
     FLASK_FOLLOWERS_PER_PAGE = 20
     FLASK_COMMENTS_PER_PAGE = 20
@@ -30,8 +30,11 @@ class DevelopmentConfig(Config):
     MAIL_USE_SSL = True
     MAIL_USERNAME = '1251562003@qq.com'#os.getenv('MAIL_USERNAME')  #
     MAIL_PASSWORD = 'ahcefwavyfzajfec'#os.getenv('MAIL_PASSWORD')  #
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')
+    #SQLALCHEMY_DATABASE_URI = "mysql://root:hu123456@localhost:3306/mywebsite"#'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')#"mysql://root:hu123456@localhost:3306/mywebsite"
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')#"mysql://root:hu123456@localhost:3306/mywebsite"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
+
 
 class TestingConfig(Config):
     TESTING = True

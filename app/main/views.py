@@ -2,7 +2,7 @@
 
 from flask import render_template,redirect, url_for, abort, flash, request, current_app, make_response
 from . import main
-from .forms import EditProfileForm, EditProfileAdminForm, QuestionForm, CommentForm, AnswerForm
+from .forms import EditProfileForm, EditProfileAdminForm, QuestionForm, AnswerForm
 from .. import db
 from ..models import User, Role, Permission, Question, Comment, Answer, Vote
 from flask_login import login_required, current_user
@@ -21,7 +21,7 @@ import sys
 @main.route('/', methods=['GET', 'POST'])
 def index():
     query_questions = None
-    if current_user.is_authenticated and current_user.followers.count() > 0:
+    if current_user.is_authenticated and current_user.followers.count() > 1:
         query_questions = current_user.followed_questions
     else:
         query_questions = Question.query
@@ -111,14 +111,12 @@ def question(id):
         return redirect(url_for('.question', id=question.id, page=-1))#id
     page = request.args.get('page', 1, type=int)
     if page == -1:
-        page = (question.answers.count() - 1) \
-               / current_app.config['FLASK_ANSWERS_PER_PAGE'] - 1
-    pagination = question.answers.order_by(Answer.timestamp.asc()).paginate(
+        page = (Answer.query.filter_by(question_id=id).count() - 1) / current_app.config['FLASK_ANSWERS_PER_PAGE'] - 1
+    pagination = Answer.query.filter_by(question_id=id).paginate(
         page, per_page=current_app.config['FLASK_ANSWERS_PER_PAGE'],
         error_out=False)
-    answers = pagination.items
     return render_template('question.html', questions=[question], form=form,
-                           answers=answers, pagination=pagination, row=sys.maxint,
+                           pagination=pagination, row=sys.maxint,
                            Answer=Answer)
 
 
@@ -327,5 +325,5 @@ def vote(id):
                 author=current_user._get_current_object())
     db.session.add(vote)
     db.session.commit()
-    return redirect(request.args.get('next') or  url_for('.index'))
+    return redirect(request.args.get('next') or url_for('.index'))
 
