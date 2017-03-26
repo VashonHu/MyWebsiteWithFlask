@@ -39,9 +39,8 @@ def register():
         db.session.add(user)
         db.session.commit()
         token = user.genarate_confirmation_taken()
-        if current_app.config['FLASK_MAIL_ADMIN']:
-            send_mail(current_app.config['FLASK_MAIL_ADMIN'],
-                      u'确认您的账户', 'auth/email/confirm', user=user, token=token)
+        send_mail(user.email,
+                  u'确认您的账户', 'auth/email/confirm', user=user, token=token)
         flash(u'一封确认邮件已经发到您的电子邮箱，请注意查收')
         return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
@@ -80,10 +79,9 @@ def unconfirmed():
 @login_required
 def resend_confirmation():
     token = current_user.genarate_confirmation_taken()
-    if current_app.config['FLASK_MAIL_ADMIN']:
-        send_mail(current_app.config['FLASK_MAIL_ADMIN'],
-                  u'确认你的账户', 'auth/email/confirm', user=current_user, token=token)
-    flash(u'一封信的电子邮件已经发送到您的邮箱')
+    send_mail(current_user.email,
+              u'确认您的账户', 'auth/email/confirm', user=current_user, token=token)
+    flash(u'一封新的电子邮件已经发送到您的邮箱')
     return redirect(request.args.get('next') or url_for('main.index'))
 
 
@@ -93,7 +91,7 @@ def change_password():
     form = ChangePasswordForm()
     if form.validate_on_submit():
         if current_user.verify_password(form.old_password.data):
-            current_user.password = form.password
+            current_user.password = form.password.data
             db.session.add(current_user)
             db.session.commit()
             flash(u'您的密码已经被更新！')
@@ -114,14 +112,13 @@ def change_email_request():
     form = ChangeEmailForm()
     if form.validate_on_submit():
         if current_user.verify_password(form.password.data):
-            current_user.new_email = form.new_email.data
+            current_user.email = form.new_email.data
             current_user.confirmed = False
             db.session.add(current_user)
             db.session.commit()
             token = current_user.genarate_confirmation_taken()
-            if current_app.config['FLASK_MAIL_ADMIN']:
-                send_mail(current_app.config['FLASK_MAIL_ADMIN'],
-                          u'确认您的账户', 'auth/email/confirm', user=user, token=token)
+            send_mail(current_user.email,
+                      u'确认您的账户', 'auth/email/confirm', user=current_user, token=token)
             flash(u'您的邮箱地址已经被更新！请确认您新的电子邮箱地址')
             return redirect(url_for('.unconfirmed'))
         else:

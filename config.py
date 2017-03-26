@@ -1,3 +1,4 @@
+# This Python file uses the following encoding: utf-8
 import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -6,7 +7,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config():
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
     SQLALCHEMY_TRACK_MODIFICATIONS = True
-    FLASK_MAIL_SENDER = 'Xhu <1251562003@qq.com>'
+    FLASK_MAIL_SENDER = u'X乎 <1251562003@qq.com>'
     FLASK_MAIL_ADMIN = '1251562003@qq.com'
     FLASK_FOLLOWERS_PER_PAGE = 20
     FLASK_COMMENTS_PER_PAGE = 20

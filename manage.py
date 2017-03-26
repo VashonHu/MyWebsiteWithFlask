@@ -34,9 +34,9 @@ def deploy():
     # db.drop_all()
     # db.create_all()
     # db.session.commit()
-    # Role.insert_roles()
+    Role.insert_roles()
     #
-    # User.generate_fake()
+    #User.generate_fake()
     # User.add_self_follows()
     Question.generate_fake()
     Answer.generate_fake()

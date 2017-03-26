@@ -21,7 +21,7 @@ import sys
 @main.route('/', methods=['GET', 'POST'])
 def index():
     query_questions = None
-    if current_user.is_authenticated and current_user.followers.count() > 1:
+    if current_user.is_authenticated and current_user.followers.count() > 0:
         query_questions = current_user.followed_questions
     else:
         query_questions = Question.query
@@ -117,7 +117,7 @@ def question(id):
         error_out=False)
     return render_template('question.html', questions=[question], form=form,
                            pagination=pagination, row=sys.maxint,
-                           Answer=Answer)
+                           Answer=Answer, body=True)
 
 
 @main.route('/edit_question/<int:id>', methods=['GET', 'POST'])

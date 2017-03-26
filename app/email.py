@@ -10,7 +10,6 @@ def send_async_email(app, msg):
 
 
 def send_mail(to, subject, template, **kwargs):
-    #app = current_app
     app = current_app._get_current_object()
     msg = Message(subject, sender=app.config['FLASK_MAIL_SENDER'],
                   recipients=[to])

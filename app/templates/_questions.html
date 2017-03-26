@@ -4,13 +4,18 @@
         <div class="question-content">
             <div class="question-date">{{ moment(question.timestamp).fromNow() }}</div>
             <div class="question-author"><a href="{{ url_for('.user', username=question.author.username) }}">{{ question.author.username }}提问：</a></div>
-            <div class="question-body">
-                {% if question.body_html %}
-                    {{ question.body_html | safe }}
-                {% else %}
-                    {{ question.body }}
-                {% endif %}
+            {% if body %}
+            <div class="question-title"><h3>标题：{{ question.title }}</h3></div>
+            <div class="question-body">问题描述：
+                    {% if question.body_html %}
+                        {{ question.body_html | safe }}
+                    {% else %}
+                        {{ question.body }}
+                    {% endif %}
             </div>
+            {% else %}
+                <div class="question-title">{{ question.title }}</div>
+            {% endif %}
             <div class="question-footer">
                 {% if current_user == question.author %}
                 <a href="{{ url_for('.edit_question', id=question.id) }}">

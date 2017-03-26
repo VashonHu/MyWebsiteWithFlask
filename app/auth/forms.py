@@ -4,6 +4,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp
 from ..models import User
+from flask_login import current_user
 
 
 class LoginForm(FlaskForm):
@@ -15,14 +16,12 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     email = StringField(u'邮件', validators=[DataRequired(), Length(1, 64), Email()])
-    username = StringField(u'昵称', validators=[DataRequired(), Length(4, 64),
-                                                   Regexp('^[A-Za-z][A-Za-z0-9_.]*$', 0,
-                                                          'Usernames must have only letters,'
-                                                   'numbers, dots or underscores')])
-    # username = StringField('Username', validators=[
-    #     DataRequired(), Length(1, 64), Regexp('^[A-Za-z][A-Za-z0-9_.]*$', 0,
-    #                                       'Usernames must have only letters, '
-    #                                       'numbers, dots or underscores')])
+    # username = StringField(u'昵称', validators=[DataRequired(), Length(4, 64),
+    #                                           Regexp('^[A-Za-z][A-Za-z0-9_]*$', 0,
+    #                                                  u'昵称只能包含英文字母，数字和下划线')])
+
+    username = StringField(u'昵称', validators=[
+        DataRequired(), Length(4, 64), Regexp('^[A-Za-z][A-Za-z0-9_]', 0, u'昵称只能包含英文字母，数字和下划线')])
 
     password = PasswordField(u'密码', validators=[
         DataRequired(), EqualTo('password2', message='两次输入的密码必须相同')])
@@ -42,7 +41,7 @@ class ChangePasswordForm(FlaskForm):
     old_password = PasswordField(u'旧密码', validators=[DataRequired()])
     password = PasswordField(u'新密码', validators=[
         DataRequired(), EqualTo('password2', message=u'两次输入的密码必须相同')])
-    password2 = PasswordField(u'确认密码', validators=[DataRequired])
+    password2 = PasswordField(u'确认密码', validators=[DataRequired()])
     submit = SubmitField(u'修改密码')
 
 
@@ -50,3 +49,8 @@ class ChangeEmailForm(FlaskForm):
     password = PasswordField(u'密码', validators=[DataRequired()])
     new_email = StringField(u'新邮件地址', validators=[DataRequired()])
     submit = SubmitField(u'修改邮箱')
+
+    def validate_new_email(self, field):
+        u = User.query.filter_by(email=field.data).first()
+        if u and u.id != current_user.id:
+            raise ValidationError(u'邮件地址已经被使用！')
