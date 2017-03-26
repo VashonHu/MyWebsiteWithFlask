@@ -161,7 +161,8 @@ class User(UserMixin, db.Model):
             db.session.commit()
 
     def unfollow(self, user):
-        f = self.followed.filter_by(followed_id=user.id()).first()
+        print user, user.id
+        f = self.followed.filter_by(followed_id=user.id).first()
         if f:
             db.session.delete(f)
             db.session.commit()
@@ -226,6 +227,24 @@ class User(UserMixin, db.Model):
         except:
             return None
         return User.query.get(data['id'])
+
+    def generate_reset_token(self, expiration=3600):
+        s = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return s.dumps({'reset': self.id})
+
+    def reset_password(self, token, new_password):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return False
+        if data.get('reset') != self.id:
+            return False
+        self.password = new_password
+        db.session.add(self)
+        db.session.commit()
+        return True
+
 
 
 class Question(db.Model):

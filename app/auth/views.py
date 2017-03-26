@@ -3,7 +3,7 @@
 from flask import render_template, url_for, redirect, request, flash, current_app
 from . import auth
 from ..models import User
-from .forms import LoginForm, RegistrationForm, ChangePasswordForm, ChangeEmailForm
+from .forms import LoginForm, RegistrationForm, ChangePasswordForm, ChangeEmailForm, ResetPassword, PasswordResetForm
 from flask_login import login_user, login_required, logout_user, current_user
 from .. import db
 from ..email import send_mail
@@ -101,9 +101,40 @@ def change_password():
     return render_template('auth/change_password.html', form=form)
 
 
-@auth.route('/.password_reset_request', methods=['GET', 'POST'])
+@auth.route('/reset', methods=['GET', 'POST'])
 def password_reset_request():
-    pass
+    if not current_user.is_anonymous:
+        return redirect(url_for('main.index'))
+    form = ResetPassword()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            token = user.generate_reset_token()
+            send_mail(user.email,
+                      u'确认您的账户', 'auth/email/reset_password', user=current_user, token=token, next=request.args.get('next'))
+            flash(u'已向你的邮件发送带有重置密码链接的邮件，请注意查收')
+            return redirect(url_for('.login'))
+        else:
+            flash(u'邮箱地址不存在，请重新输入')
+    return render_template('auth/reset_password.html', form=form)
+
+
+@auth.route('/reset/<token>', methods=['GET', 'POST'])
+def password_reset(token):
+    if not current_user.is_anonymous:
+        return redirect(url_for('main.index'))
+    form = PasswordResetForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user is None:
+            return redirect(url_for('main.index'))
+        if user.reset_password(token, form.password.data):
+            flash(u'密码已经重置')
+            return redirect(url_for('auth.login'))
+        else:
+            flash(u'口令验证失败')
+            return redirect(url_for('main.index'))
+    return render_template('auth/reset_password.html', form=form)
 
 
 @auth.route('/change_email_request', methods=['GET', 'POST'])
